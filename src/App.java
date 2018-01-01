@@ -25,166 +25,117 @@ public class App {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
         }
-        System.out.println("Opened database successfully");
+        System.out.println("db has been opened successfully");
     }
 
-    /**
-     * Ausgabe aller Datensaetze
-     *
-     * @param variante : 1-nach Lauf kommt menu bzw. 0-menu kommt nicht
-     * @throws SQLException
-     */
-    static void printAll(int variante) throws SQLException {
+    static void printAll(int mode) throws SQLException {
         resultSet = statement.executeQuery("select * from users");
         metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
 
-        int num_columns = metaData.getColumnCount();
-        //System.out.println("Anzahl Splaten: " + num_columns);
-
-        System.out.println("\nUID-------------------------Name----------------email----------------------------------");
+        System.out.println("\nUID-----------------------Name-----------------email-----------------------------------");
         while (resultSet.next()) {
-            for (int i = 1; i <= num_columns; i++) {
+            for (int i = 1; i <= columnCount; i++) {
                 System.out.printf("%-15s", resultSet.getString(i));
             }
             System.out.print("\n");
         }
 
-        System.out.println("-----------------------------------------------------------------------------------------");
-        if (variante == 1) {
+        System.out.println("-------------------------------------------------------------------------------------------");
+        if (mode == 1) {
             menu();
         }
     }
 
-    /**
-     * Datensatz einfuegen
-     *
-     * @throws SQLException
-     */
-    public static void add_element() throws SQLException {
-        Scanner fragen = new Scanner(System.in);
+    static void add() throws SQLException {
+        Scanner sc = new Scanner(System.in);
 
-        System.out.print("\nAutoNr: ");
-        while (fragen.hasNextInt() != true) {
-            System.out.print(" *** Error: Nur int-Zahlen erlaubt!\n");
-            System.out.print("AutoNr: ");
-            fragen.nextLine();
+        System.out.print("\nuser id: ");
+        while (sc.hasNextInt() != true) {
+            System.out.print("Error: only integers are allowed\n");
+            System.out.print("user id: ");
+            sc.nextLine();
         }
-        int autonr = fragen.nextInt();
-        fragen.nextLine();
+        int uid = sc.nextInt();
+        sc.nextLine();
 
-        System.out.print("Hersteller: ");
-        String hersteller = fragen.nextLine();
+        System.out.print("first name: ");
+        String firstName = sc.nextLine();
 
-        System.out.print("Autotyp: ");
-        String autotyp = fragen.nextLine();
+        System.out.print("last name: ");
+        String lastName = sc.nextLine();
 
-        System.out.print("Kilometerstand: ");
-        while (fragen.hasNextInt() != true) {
-            System.out.print(" *** Error: Nur int-Zahlen erlaubt!\n");
-            System.out.print("Kilometerstand: ");
-            fragen.nextLine();
-        }
-        int kilometerstand = fragen.nextInt();
-        fragen.nextLine();
-
-        String regex = "[0-9]{4}-[0-9]{2}-[0-9]{2}";
-        System.out.print("TUV (YYYY-MM-DD): ");
-        String tuv = "datum";
-        tuv = fragen.nextLine();
-        while (!tuv.matches(regex)) {
-            System.out.print(" *** Error: Bitte Format YYYY-MM-DD beachten!\n");
-            System.out.print("TUV (YYYY-MM-DD): ");
-            tuv = fragen.nextLine();
-            tuv = tuv;
-        }
-
-        System.out.print("Kennzeichen: ");
-        String kennzeichen = fragen.nextLine();
-
+        System.out.print("email: ");
+        String email = sc.nextLine();
 
         try {
-            statement.executeUpdate("INSERT INTO users " + "VALUES (" + autonr + ", '" + hersteller + "', '" + autotyp + "', " + kilometerstand + ", '" + tuv + "', '" + kennzeichen + "')");
+            statement.executeUpdate("INSERT INTO users " + "VALUES (" + uid + ", '" + firstName + "', '" + lastName + "', '" + email + "')");
             System.out.print("Done! \n");
         } catch (SQLException ex) {
-            System.out.println("\n *** Error: Sie haben falsch Datum geschrieben! Probieren Sie später noch mal!");
+            System.out.println("\nError: please try again");
         }
         menu();
     }
 
-
-    /**
-     * Datensatz loeschen
-     *
-     * @throws SQLException
-     */
-    public static void delete_element() throws SQLException {
+    static void del() throws SQLException {
         printAll(0);
+        Scanner sc = new Scanner(System.in);
+        System.out.print("\nType the data set ID you wish to delete: ");
 
-        Scanner check = new Scanner(System.in);
-        System.out.print("\nWelchen Datensatz wollen Sie loeschen (nur autonr eingeben): ");
-        while (check.hasNextInt() != true) {
-            System.out.print(" *** Error: Nur int-Zahlen erlaubt!\n");
-            System.out.print("Autonr: ");
-            check.nextLine();
+        while (sc.hasNextInt() != true) {
+            System.out.print("Error: only integers are allowed\n");
+            System.out.print("user id: ");
+            sc.nextLine();
         }
-        int autonr = check.nextInt();
+        int uid = sc.nextInt();
 
-
-        String query = "delete from users where autonr = ?";
+        String query = "delete from users where uid = ?";
         PreparedStatement preparedStmt = connection.prepareStatement(query);
-        preparedStmt.setInt(1, autonr);
-
-        // execute the preparedstatement
+        preparedStmt.setInt(1, uid);
         preparedStmt.execute();
 
         System.out.print("Done! \n");
         menu();
     }
 
-    private static void oneAusgabe() throws SQLException {
+    private static void iterate() throws SQLException {
         if (resultSet.isBeforeFirst()) {
-            System.out.println("\n *** Das war schon Anfang! Liste wird wieder auf Ende gesetzt!");
             resultSet.last();
         }
 
         if (resultSet.isAfterLast()) {
-            System.out.println("\n *** Das war schon Ende! Liste wird wieder auf Anfang gesetzt!");
             resultSet.first();
         }
+
         System.out.println("\n---------------------------------------------------------------------------------------");
-        for (int i = 1; i <= 6; i++) {
+        for (int i = 1; i <= 4; i++) {
             System.out.printf("%-15s", resultSet.getString(i));
         }
+
         System.out.println("\n---------------------------------------------------------------------------------------");
         System.out.print("\n");
-
         einzeln();
     }
 
-    /**
-     * Einzelne Ausgabe (Naviegieren)
-     *
-     * @throws SQLException
-     */
-    public static void einzeln() throws SQLException {
-        Scanner nav = new Scanner(System.in);
+    static void einzeln() throws SQLException {
+        Scanner sc = new Scanner(System.in);
         System.out.print("\n n (next), p (previous), q (quit): ");
-        String nv = nav.nextLine();
+        String line = sc.nextLine();
 
-        switch (nv) {
+        switch (line) {
             case "n":
                 resultSet.next();
-                oneAusgabe();
+                iterate();
                 break;
             case "p":
                 resultSet.previous();
-                oneAusgabe();
+                iterate();
                 break;
             case "q":
                 menu();
                 break;
             default:
-                System.out.print("\n *** Error: Bitte aufmerksam eingeben! \n");
+                System.out.print("\nError: please try again\n");
                 einzeln();
         }
     }
@@ -194,44 +145,40 @@ public class App {
         metaData = resultSet.getMetaData();
     }
 
-    /**
-     * Menu
-     *
-     * @throws SQLException
-     */
-    public static void menu() throws SQLException {
-        Scanner menu = new Scanner(System.in);
-        System.out.println("\n +++ MENU users +++");
-        System.out.println("(1) Ausgabe (komplett) ");
-        System.out.println("(2) Datensatz eingebeben");
-        System.out.println("(3) Datensatz loeschen");
-        System.out.println("(4) Ausgabe einzeln");
+    static void menu() throws SQLException {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("\n\tusers table");
+        System.out.println("1. print all");
+        System.out.println("2. add data set");
+        System.out.println("3. del data set");
+        System.out.println("4. print");
+        System.out.println("________________");
         clear();
-        System.out.print("Ihre Wahl: ");
+        System.out.print(">> ");
 
-        if (menu.hasNextInt()) {
-            int wahl = menu.nextInt();
+        if (sc.hasNextInt()) {
+            int temp = sc.nextInt();
 
-            switch (wahl) {
+            switch (temp) {
                 case 1:
                     printAll(1);
                     break;
                 case 2:
-                    add_element();
+                    add();
                     break;
                 case 3:
-                    delete_element();
+                    del();
                     break;
                 case 4:
                     einzeln();
                     break;
                 default:
-                    System.out.println("\n*** Error: Bitte aufmerksam noch mal eingeben!");
+                    System.out.println("\nError: please try again");
                     menu();
             }
         } else {
-            //falls kein int-wert
-            System.out.println("\n*** Error: Bitte aufmerksam noch mal eingeben!");
+            System.out.println("\nError: please try again");
             menu();
         }
     }
